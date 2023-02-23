@@ -3,10 +3,13 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const { sequelize } = require("./db");
-// const Question = require("./models/question");
-// const User = require("./models/user");
-// const Answer = require("./models/answer");
 const questionsRouter = require("./router");
+
+
+
+process.on("uncaughtException", function (err) {
+  console.log("Caught exception: ", err);
+});
 
 // Define the express app
 const app = express();
