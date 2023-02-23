@@ -3,35 +3,77 @@ import axios from "./axios";
 import "./App.css";
 // import { toast, ToastContainer } from "react-toastify";
 import { toast, Toaster } from "react-hot-toast";
+import jwt_decode from "jwt-decode";
+
 function App() {
-  const [currentComp, setCurrentComp] = useState("register");
+  const [currentComp, setCurrentComp] = useState("home");
+  const [userToken, setUserToken] = useState(null);
+
   useEffect(() => {
     try {
-      if (localStorage.getItem("token")) setCurrentComp("home");
+      if (localStorage.getItem("token")) {
+        setUserToken(localStorage.getItem("token"));
+        setCurrentComp("home");
+      }
     } catch (error) {}
   }, []);
   const Navbar = () => {
     return (
       <nav className="flex items-center justify-between flex-wrap bg-gray-800 p-6">
-        <div className="flex items-center flex-shrink-0 text-white mr-6">
+        <div
+          className="flex items-center flex-shrink-0 text-white mr-6 cursor-pointer"
+          onClick={() => {
+            setCurrentComp("home");
+            window.location = "/";
+          }}
+        >
           <span className="font-semibold text-xl tracking-tight">
             Urdu Q/A Portal
           </span>
         </div>
-        <div className="flex">
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-4"
-            onClick={() => setCurrentComp("login")}
-          >
-            Login
-          </button>
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => setCurrentComp("register")}
-          >
-            Register
-          </button>
+        <div
+          className="flex items-center flex-shrink-0 text-white mr-6 cursor-pointer"
+          onClick={() => {
+            setCurrentComp("home");
+          }}
+        >
+          <span className="font-semibold text-xl tracking-tight">Home</span>
         </div>
+        {userToken ? (
+          <div className="flex">
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-4"
+              onClick={() => {
+                localStorage.removeItem("token");
+                setCurrentComp("home");
+                window.location.reload();
+              }}
+            >
+              LogOut
+            </button>
+          </div>
+        ) : (
+          <div className="flex">
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-4"
+              onClick={() => {
+                setCurrentComp("login");
+                // window.location.reload();
+              }}
+            >
+              Login
+            </button>
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={() => {
+                setCurrentComp("register");
+                // window.location.reload();
+              }}
+            >
+              Register
+            </button>
+          </div>
+        )}
       </nav>
     );
   };
@@ -46,6 +88,7 @@ function App() {
         localStorage.setItem("token", response.data.token);
         toast.success("Login Successful");
         setCurrentComp("home");
+        window.location.reload();
         // Redirect user to dashboard or home page
       } catch (error) {
         console.error(error);
@@ -124,6 +167,7 @@ function App() {
           localStorage.setItem("token", response.data.token);
           toast.success("Registration Successful");
           setCurrentComp("home");
+          window.location.reload();
         }
 
         // redirect to dashboard or home page
@@ -203,7 +247,7 @@ function App() {
     const [user, setUser] = useState([]);
     useEffect(() => {
       axios(`/users/${id}`).then((data) => setUser(data.data));
-    });
+    }, []);
     return (
       <span>
         <strong>{user.name}</strong>
@@ -231,87 +275,71 @@ function App() {
 
   const Question = ({ data }) => {
     const [user, setUser] = useState([]);
+    const [answerText, setAnswerText] = useState("");
+
     useEffect(() => {
       axios(`/users/${data.userId}`).then((data) => setUser(data.data));
     }, []);
-
+    const handleAnswerSubmit = async (e) => {
+      e.preventDefault();
+      const decToken = jwt_decode(userToken);
+      try {
+        const response = await axios.post(`/questions/${data.id}/answers`, {
+          text: answerText,
+          userId: decToken.id,
+        });
+        toast.success("Answer added");
+        console.log(response.data);
+        window.location.reload();
+      } catch (error) {
+        toast.error("Error adding answer");
+        console.log(error);
+      }
+      setAnswerText("");
+    };
     return (
       <div key={data.id} className="bg-white shadow p-4 mb-4">
-        <p className="text-gray-600">{user.name}</p>
+        <p className="text-gray-600">
+          Question by : <strong>{user.name}</strong>
+        </p>
         <h2 className="text-lg font-bold">{data.title}</h2>
         <p className="text-gray-700">{data.text}</p>
 
         <Answer id={data.id} />
+        <form onSubmit={handleAnswerSubmit}>
+          <div className="mt-4">
+            <label
+              htmlFor="answer"
+              className="block text-gray-700 font-bold mb-2"
+            >
+              Your answer:
+            </label>
+            <textarea
+              id="answer"
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              value={answerText}
+              onChange={(e) => setAnswerText(e.target.value)}
+            />
+          </div>
+          <div className="mt-4">
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              type="submit"
+            >
+              Submit
+            </button>
+          </div>
+        </form>
       </div>
     );
   };
 
   const QuestionsList = () => {
-    const [questions, setQuestions] = useState([
-      {
-        id: 1,
-        title: "title of first question",
-        text: "description of first question",
-        englishWordsPercentage: 0,
-        status: "open",
-        createdAt: "2023-02-23T12:02:09.464Z",
-        updatedAt: "2023-02-23T12:02:09.464Z",
-        userId: 1,
-        answers: [
-          {
-            id: 1,
-            text: "description of first question by user 1",
-            englishWordsPercentage: 0,
-            isCorrect: false,
-            isHelpful: false,
-            createdAt: "2023-02-23T12:04:54.830Z",
-            updatedAt: "2023-02-23T12:04:54.830Z",
-            userId: 1,
-            questionId: 1,
-          },
-        ],
-      },
-      {
-        id: 2,
-        title: "title of 2nd question",
-        text: "description of 2nd question",
-        englishWordsPercentage: 0,
-        status: "open",
-        createdAt: "2023-02-23T12:02:30.070Z",
-        updatedAt: "2023-02-23T12:02:30.070Z",
-        userId: 1,
-        answers: [
-          {
-            id: 2,
-            text: "answer of 2nd question by user 2",
-            englishWordsPercentage: 0,
-            isCorrect: false,
-            isHelpful: false,
-            createdAt: "2023-02-23T12:05:18.397Z",
-            updatedAt: "2023-02-23T12:05:18.397Z",
-            userId: 2,
-            questionId: 2,
-          },
-          {
-            id: 3,
-            text: "another answer of 2nd question by user 2",
-            englishWordsPercentage: 0,
-            isCorrect: false,
-            isHelpful: false,
-            createdAt: "2023-02-23T12:08:08.952Z",
-            updatedAt: "2023-02-23T12:08:08.952Z",
-            userId: 2,
-            questionId: 2,
-          },
-        ],
-      },
-    ]);
+    const [questions, setQuestions] = useState([]);
 
-    // useEffect(() => {
-    //   axios("/questions")
-    //     .then((res) => res.json())
-    //     .then((data) => setQuestions(data));
-    // }, []);
+    useEffect(() => {
+      axios("/questions").then((data) => setQuestions(data.data));
+    }, []);
 
     return (
       <div className="p-4">

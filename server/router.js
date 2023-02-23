@@ -4,6 +4,7 @@ const router = express.Router();
 const { User, Question, Answer } = require("./models");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const { Op } = require("sequelize");
 
 let jwt_private = process.env.JWT_PRIVATE_KEY || "jwt_private_key";
 
@@ -20,7 +21,7 @@ const auth = function (req, res, next) {
   }
 };
 const admin = function (req, res, next) {
-  "admin ", req.user;
+  // "admin ", req.user;
   if (req.user.role !== "admin") {
     return res.status(403).send("access denied");
   }
@@ -45,7 +46,25 @@ router.get("/questions", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
-
+// search questions
+router.get("/questions/search/:searchText", async (req, res) => {
+  const searchText = req.params.searchText;
+  try {
+    const questions = await Question.findAll({
+      where: {
+        [Op.or]: [
+          { title: { [Op.like]: `%${searchText}%` } },
+          { text: { [Op.like]: `%${searchText}%` } },
+        ],
+      },
+      attributes: ["id", "title", "text", "createdAt"],
+    });
+    res.json(questions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
 // GET a specific question and its answers
 router.get("/questions/:id", async (req, res) => {
   const { id } = req.params;
@@ -59,7 +78,7 @@ router.get("/questions/:id", async (req, res) => {
 });
 
 // POST a new question
-router.post("/questions", async (req, res) => {
+router.post("/questions", auth, async (req, res) => {
   const { title, text, userId } = req.body;
   try {
     const question = await Question.create({ title, text, userId });
@@ -71,7 +90,7 @@ router.post("/questions", async (req, res) => {
 });
 
 // PUT (update) an existing question
-router.put("/questions/:id", async (req, res) => {
+router.put("/questions/:id", auth, async (req, res) => {
   const { id } = req.params;
   const { title, text } = req.body;
   try {
@@ -87,7 +106,7 @@ router.put("/questions/:id", async (req, res) => {
 });
 
 // DELETE an existing question
-router.delete("/questions/:id", async (req, res) => {
+router.delete("/questions/:id", [auth, admin], async (req, res) => {
   const { id } = req.params;
   try {
     const question = await Question.findByPk(id);
@@ -112,7 +131,7 @@ router.get("/questions/:id/answers", async (req, res) => {
 });
 
 // POST a new answer for a specific question
-router.post("/questions/:id/answers", async (req, res) => {
+router.post("/questions/:id/answers", auth, async (req, res) => {
   const { text, userId } = req.body;
   const { id } = req.params;
   try {
@@ -129,7 +148,7 @@ router.post("/questions/:id/answers", async (req, res) => {
 });
 
 // PUT (update) an existing answer
-router.put("/answers/:id", async (req, res) => {
+router.put("/answers/:id", auth, async (req, res) => {
   const { id } = req.params;
   const { text } = req.body;
   try {
@@ -147,7 +166,7 @@ router.put("/answers/:id", async (req, res) => {
 });
 
 // DELETE an existing answer
-router.delete("/answers/:id", async (req, res) => {
+router.delete("/answers/:id", [auth, admin], async (req, res) => {
   const { id } = req.params;
   try {
     const answer = await Answer.findByPk(id);
@@ -180,6 +199,7 @@ router.post("/login", async function (req, res) {
               name: user.name,
               email: user.email,
               role: user.role,
+              id: user.id,
             },
             jwt_private
           );
@@ -205,17 +225,18 @@ router.post("/register", async function (req, res) {
   let { name, email, password } = req.body;
   password = await bcrypt.hash(password, salt);
 
-  const token = jwt.sign(
-    {
-      name: name,
-      email: email,
-      role: "user",
-    },
-    jwt_private
-  );
   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     try {
       const user = await User.create({ name, email, password });
+      const token = jwt.sign(
+        {
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          id: user.id,
+        },
+        jwt_private
+      );
       res.send(
         createResponse("success", "User Registered Succesfully!", token)
       );
@@ -228,6 +249,9 @@ router.post("/register", async function (req, res) {
 });
 // GET a single user by ID
 router.get("/users/:id", async (req, res) => {
+  console.log("====================================");
+  console.log("getting single user");
+  console.log("====================================");
   const { id } = req.params;
   try {
     const user = await User.findByPk(id);
