@@ -47,6 +47,10 @@ const Question = sequelize.define("question", {
     type: DataTypes.ENUM("open", "closed"),
     defaultValue: "open",
   },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
 });
 
 const Answer = sequelize.define("answer", {
@@ -70,6 +74,10 @@ const Answer = sequelize.define("answer", {
   isHelpful: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
   },
 });
 

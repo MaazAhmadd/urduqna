@@ -5,8 +5,6 @@ const cors = require("cors");
 const { sequelize } = require("./db");
 const questionsRouter = require("./router");
 
-
-
 process.on("uncaughtException", function (err) {
   console.log("Caught exception: ", err);
 });
@@ -17,7 +15,17 @@ const app = express();
 // Set up middleware
 app.use(cors());
 app.use(bodyParser.json());
-
+app.use((req, res, next) => {
+  res.sendResponse = (status, data, code) => {
+    const response = {
+      status, // 200, 201, 400, 404, 500
+      code, // success, error
+      data,
+    };
+    res.status(status).json(response);
+  };
+  next();
+});
 // Define routes
 app.use("/api", questionsRouter);
 

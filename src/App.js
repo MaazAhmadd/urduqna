@@ -1,21 +1,26 @@
 import React, { useState, useEffect } from "react";
 import axios from "./axios";
-import "./App.css";
-// import { toast, ToastContainer } from "react-toastify";
 import { toast, Toaster } from "react-hot-toast";
 import jwt_decode from "jwt-decode";
+import "./App.css";
 
 function App() {
   const [currentComp, setCurrentComp] = useState("home");
-  const [userToken, setUserToken] = useState(null);
+  const [userToken, setUserToken] = useState("");
 
   useEffect(() => {
     try {
-      if (localStorage.getItem("token")) {
+      if (
+        localStorage.getItem("token") &&
+        localStorage.getItem("token") !== "undefined"
+      ) {
         setUserToken(localStorage.getItem("token"));
         setCurrentComp("home");
       }
-    } catch (error) {}
+    } catch (error) {
+      setUserToken("");
+      // setCurrentComp("home");
+    }
   }, []);
   const Navbar = () => {
     return (
@@ -32,12 +37,44 @@ function App() {
           </span>
         </div>
         <div
-          className="flex items-center flex-shrink-0 text-white mr-6 cursor-pointer"
+          className={`flex items-center flex-shrink-0 text-white mr-6 cursor-pointer ${
+            currentComp == "myQ" ? "border-2 p-2" : ""
+          }`}
+          onClick={() => {
+            setCurrentComp("myQ");
+          }}
+        >
+          <span className="font-semibold text-xl tracking-tight">MyQ</span>
+        </div>
+        <div
+          className={`flex items-center flex-shrink-0 text-white mr-6 cursor-pointer ${
+            currentComp == "home" ? "border-2 p-2" : ""
+          }`}
           onClick={() => {
             setCurrentComp("home");
           }}
         >
           <span className="font-semibold text-xl tracking-tight">Home</span>
+        </div>
+        <div
+          className={`flex items-center flex-shrink-0 text-white mr-6 cursor-pointer ${
+            currentComp == "ask" ? "border-2 p-2" : ""
+          }`}
+          onClick={() => {
+            setCurrentComp("ask");
+          }}
+        >
+          <span className="font-semibold text-xl tracking-tight">Ask</span>
+        </div>
+        <div
+          className={`flex items-center flex-shrink-0 text-white mr-6 cursor-pointer ${
+            currentComp == "search" ? "border-2 p-2" : ""
+          }`}
+          onClick={() => {
+            setCurrentComp("search");
+          }}
+        >
+          <span className="font-semibold text-xl tracking-tight">Search</span>
         </div>
         {userToken ? (
           <div className="flex">
@@ -85,11 +122,16 @@ function App() {
       event.preventDefault();
       try {
         const response = await axios.post("/login", { email, password });
-        localStorage.setItem("token", response.data.token);
-        toast.success("Login Successful");
-        setCurrentComp("home");
-        window.location.reload();
-        // Redirect user to dashboard or home page
+        if (response.data.code === "error") {
+          toast.error(response.data.data.message);
+          return;
+        } else {
+          localStorage.setItem("token", response.data.data.token);
+          toast.success("Login Successful");
+          setCurrentComp("home");
+          window.location.reload();
+          // Redirect user to dashboard or home page
+        }
       } catch (error) {
         console.error(error);
       }
@@ -151,20 +193,16 @@ function App() {
     const handleSubmit = async (e) => {
       e.preventDefault();
       try {
-        const response = await axios
-          .post("/register", {
-            name,
-            email,
-            password,
-          })
-          .catch((error) => {
-            toast.error(error.response.data.msg);
-          });
+        const response = await axios.post("/register", {
+          name,
+          email,
+          password,
+        });
         console.log(response.data);
         if (response.data.code == "error") {
-          toast.error(response.data.msg);
+          toast.error(response.data.data.message);
         } else {
-          localStorage.setItem("token", response.data.token);
+          localStorage.setItem("token", response.data.data.token);
           toast.success("Registration Successful");
           setCurrentComp("home");
           window.location.reload();
@@ -254,26 +292,83 @@ function App() {
       </span>
     );
   };
-  const Answer = ({ id }) => {
+  const Answer = ({ id, correct }) => {
     const [answers, setAnswers] = useState([]);
 
     useEffect(() => {
-      axios(`/questions/${id}/answers`).then((data) => setAnswers(data.data));
+      axios(`/questions/${id}/answers`).then((res) => {
+        if (res.data.message == "error") {
+          toast.error(res.data.message);
+        } else {
+          setAnswers(res.data.data.user);
+        }
+      });
     }, []);
+
+    const handleMarkCorrect = async (qID, aID) => {
+      try {
+        await axios(`/answers/${qID}/${aID}/correct`)
+          .then((res) => {
+            console.log("====================================");
+            console.log(res);
+            console.log("====================================");
+            if (res.data.message == "success") {
+              toast.success("Answer marked as correct");
+              window.location.reload();
+            } else {
+              toast.error(res.data.data.message);
+            }
+          })
+          .catch((error) => {
+            console.log("====================================");
+            console.log(error);
+            console.log("====================================");
+            toast.error(error.response.data.error);
+          });
+
+        //   if (response.data.error) {
+        //     console.log(response);
+        //     toast.error(response.data.msg);
+        //   } else {
+        //     toast.success("Answer marked as correct");
+        //     window.location.reload();
+        //   }
+      } catch (error) {
+        console.log(error);
+        // show error message
+      }
+    };
 
     return (
       <div className="mt-4">
-        {answers.map((answer) => (
-          <div key={answer.id} className="bg-gray-200 p-2 rounded-lg mb-2">
-            <AnswerUser id={answer.userId} /> :
-            <span className="text-gray-700">{answer.text}</span>
-          </div>
-        ))}
+        {answers.map((answer) => {
+          return (
+            <div
+              key={answer.id}
+              className={`flex justify-between items-center 
+               ${
+                 answer.isCorrect ? "bg-green-500" : "bg-gray-200"
+               } p-2 rounded-lg mb-2`}
+            >
+              <div>
+                <AnswerUser id={answer.userId} /> :
+                <span className="text-gray-700">{answer.text}</span>
+              </div>
+              {correct && (
+                <button
+                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-4"
+                  onClick={() => handleMarkCorrect(id, answer.id)}
+                >
+                  mark as correct
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   };
-
-  const Question = ({ data }) => {
+  const Question = ({ data, correct }) => {
     const [user, setUser] = useState([]);
     const [answerText, setAnswerText] = useState("");
 
@@ -282,8 +377,13 @@ function App() {
     }, []);
     const handleAnswerSubmit = async (e) => {
       e.preventDefault();
-      const decToken = jwt_decode(userToken);
       try {
+        const decToken = jwt_decode(userToken);
+        if (data.userId == decToken.id) {
+          toast.error("You can't answer your own question");
+          setAnswerText("");
+          return;
+        }
         const response = await axios.post(`/questions/${data.id}/answers`, {
           text: answerText,
           userId: decToken.id,
@@ -292,7 +392,7 @@ function App() {
         console.log(response.data);
         window.location.reload();
       } catch (error) {
-        toast.error("Error adding answer");
+        toast.error("Error adding answer, log in?");
         console.log(error);
       }
       setAnswerText("");
@@ -302,10 +402,11 @@ function App() {
         <p className="text-gray-600">
           Question by : <strong>{user.name}</strong>
         </p>
+        <h3 className="text-lg text-gray-700">Status : {data.status}</h3>
         <h2 className="text-lg font-bold">{data.title}</h2>
         <p className="text-gray-700">{data.text}</p>
 
-        <Answer id={data.id} />
+        <Answer id={data.id} correct={correct} />
         <form onSubmit={handleAnswerSubmit}>
           <div className="mt-4">
             <label
@@ -333,7 +434,6 @@ function App() {
       </div>
     );
   };
-
   const QuestionsList = () => {
     const [questions, setQuestions] = useState([]);
 
@@ -350,7 +450,131 @@ function App() {
       </div>
     );
   };
+  const MyQuestionsList = () => {
+    const [questions, setQuestions] = useState([]);
 
+    useEffect(() => {
+      axios("/questions").then((data) => {
+        const userId = jwt_decode(userToken).id;
+        const myQuestions = data.data.filter((question) => {
+          return question.userId == userId;
+        });
+        setQuestions(myQuestions);
+      });
+    }, []);
+
+    return (
+      <div className="p-4">
+        <h1 className="text-2xl font-bold mb-4">Questions List</h1>
+        {questions.map((question) => (
+          <Question key={question.id} data={question} correct={true} />
+        ))}
+      </div>
+    );
+  };
+  const Search = () => {
+    const [searchText, setSearchText] = useState("");
+    const [searchResults, setSearchResults] = useState([]);
+
+    const handleSearch = async () => {
+      try {
+        const response = await axios.get(`/questions/search/${searchText}`);
+
+        setSearchResults(response.data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    return (
+      <div className="flex flex-col items-center justify-center">
+        <div className="flex items-center justify-center my-4">
+          <input
+            type="text"
+            placeholder="Search questions"
+            className="border border-gray-400 rounded-l-md py-2 px-4 w-full"
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+          />
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-md"
+            onClick={handleSearch}
+          >
+            Search
+          </button>
+        </div>
+        {searchResults.map((result) => (
+          <div key={result.id} className="bg-white shadow p-4  my-4">
+            <h3 className="font-bold">{result.title}</h3>
+            <p>{result.text}</p>
+          </div>
+        ))}
+      </div>
+    );
+  };
+  const AddQuestion = () => {
+    const [title, setTitle] = useState("");
+    const [text, setText] = useState("");
+
+    const handleSubmit = async (event) => {
+      event.preventDefault();
+      try {
+        const token = localStorage.getItem("token");
+        const userId = jwt_decode(token).id;
+        const response = await axios.post("/questions", {
+          title,
+          text,
+          userId,
+        });
+        if (response.status >= 200 && response.status <= 299) {
+          toast.success("Question added");
+          setCurrentComp("home");
+          window.location.reload();
+          console.log(response.data);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    return (
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <label htmlFor="title" className="block text-gray-700 font-bold mb-2">
+            Title
+          </label>
+          <input
+            type="text"
+            id="title"
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label htmlFor="text" className="block text-gray-700 font-bold mb-2">
+            Description
+          </label>
+          <textarea
+            id="text"
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            required
+          />
+        </div>
+        <div className="flex items-center justify-center">
+          <button
+            type="submit"
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          >
+            Add Question
+          </button>
+        </div>
+      </form>
+    );
+  };
   if (currentComp == "home") {
     return (
       <>
@@ -378,12 +602,33 @@ function App() {
       </>
     );
   }
-  // return (
-  //   <>
-  //     <Navbar />;
-  //     <QuestionsList />;
-  //   </>
-  // );
+  if (currentComp == "search") {
+    return (
+      <>
+        <Toaster position="top-center" reverseOrder={false} />
+        <Navbar />;
+        <Search />;
+      </>
+    );
+  }
+  if (currentComp == "ask") {
+    return (
+      <>
+        <Toaster position="top-center" reverseOrder={false} />
+        <Navbar />;
+        <AddQuestion />;
+      </>
+    );
+  }
+  if (currentComp == "myQ") {
+    return (
+      <>
+        <Toaster position="top-center" reverseOrder={false} />
+        <Navbar />;
+        <MyQuestionsList />;
+      </>
+    );
+  }
 }
 
 export default App;
