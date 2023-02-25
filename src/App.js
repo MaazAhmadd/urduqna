@@ -7,6 +7,26 @@ import "./App.css";
 function App() {
   const [currentComp, setCurrentComp] = useState("home");
   const [userToken, setUserToken] = useState("");
+  const [decToken, setDecToken] = useState(() => {
+    try {
+      return jwt_decode(userToken);
+    } catch (error) {
+      return "";
+    }
+  });
+
+  const showError = (error) => {
+    console.log(error);
+
+    if (error?.response?.data?.errors) {
+      console.log("errors: ", error?.response?.data?.errors);
+      error?.response?.data?.errors?.forEach((error) => {
+        toast.error(`${error?.msg} (${error?.param})`);
+      });
+    } else if (error?.response?.data?.code == "error") {
+      toast.error(error?.response?.data?.data?.message);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -36,16 +56,18 @@ function App() {
             Urdu Q/A Portal
           </span>
         </div>
-        <div
-          className={`flex items-center flex-shrink-0 text-white mr-6 cursor-pointer ${
-            currentComp == "myQ" ? "border-2 p-2" : ""
-          }`}
-          onClick={() => {
-            setCurrentComp("myQ");
-          }}
-        >
-          <span className="font-semibold text-xl tracking-tight">MyQ</span>
-        </div>
+        {userToken && (
+          <div
+            className={`flex items-center flex-shrink-0 text-white mr-6 cursor-pointer ${
+              currentComp == "myQ" ? "border-2 p-2" : ""
+            }`}
+            onClick={() => {
+              setCurrentComp("myQ");
+            }}
+          >
+            <span className="font-semibold text-xl tracking-tight">MyQ</span>
+          </div>
+        )}
         <div
           className={`flex items-center flex-shrink-0 text-white mr-6 cursor-pointer ${
             currentComp == "home" ? "border-2 p-2" : ""
@@ -122,18 +144,14 @@ function App() {
       event.preventDefault();
       try {
         const response = await axios.post("/login", { email, password });
-        if (response.data.code === "error") {
-          toast.error(response.data.data.message);
-          return;
-        } else {
-          localStorage.setItem("token", response.data.data.token);
-          toast.success("Login Successful");
-          setCurrentComp("home");
-          window.location.reload();
-          // Redirect user to dashboard or home page
-        }
+
+        localStorage.setItem("token", response.data.data.token);
+        toast.success("Login Successful");
+        setCurrentComp("home");
+        window.location.reload();
+        // Redirect user to dashboard or home page
       } catch (error) {
-        console.error(error);
+        showError(error);
       }
     };
 
@@ -198,20 +216,15 @@ function App() {
           email,
           password,
         });
-        console.log(response.data);
-        if (response.data.code == "error") {
-          toast.error(response.data.data.message);
-        } else {
-          localStorage.setItem("token", response.data.data.token);
-          toast.success("Registration Successful");
-          setCurrentComp("home");
-          window.location.reload();
-        }
+
+        localStorage.setItem("token", response.data.data.token);
+        toast.success("Registration Successful");
+        setCurrentComp("home");
+        window.location.reload();
 
         // redirect to dashboard or home page
       } catch (error) {
-        console.log(error.response.data.message);
-        // show error message
+        showError(error);
       }
     };
 
@@ -284,7 +297,12 @@ function App() {
   const AnswerUser = ({ id }) => {
     const [user, setUser] = useState([]);
     useEffect(() => {
-      axios(`/users/${id}`).then((data) => setUser(data.data));
+      try {
+        const res = axios(`/users/${id}`);
+        setUser(res.data.data.user);
+      } catch (error) {
+        showError(error);
+      }
     }, []);
     return (
       <span>
@@ -296,47 +314,25 @@ function App() {
     const [answers, setAnswers] = useState([]);
 
     useEffect(() => {
-      axios(`/questions/${id}/answers`).then((res) => {
-        if (res.data.message == "error") {
-          toast.error(res.data.message);
-        } else {
-          setAnswers(res.data.data.user);
-        }
-      });
+      axios(`/questions/${id}/answers`)
+        .then((res) => {
+          console.log(res);
+          setAnswers(res.data.data.answers);
+        })
+        .catch((error) => {
+          showError(error);
+        });
     }, []);
 
     const handleMarkCorrect = async (qID, aID) => {
-      try {
-        await axios(`/answers/${qID}/${aID}/correct`)
-          .then((res) => {
-            console.log("====================================");
-            console.log(res);
-            console.log("====================================");
-            if (res.data.message == "success") {
-              toast.success("Answer marked as correct");
-              window.location.reload();
-            } else {
-              toast.error(res.data.data.message);
-            }
-          })
-          .catch((error) => {
-            console.log("====================================");
-            console.log(error);
-            console.log("====================================");
-            toast.error(error.response.data.error);
-          });
-
-        //   if (response.data.error) {
-        //     console.log(response);
-        //     toast.error(response.data.msg);
-        //   } else {
-        //     toast.success("Answer marked as correct");
-        //     window.location.reload();
-        //   }
-      } catch (error) {
-        console.log(error);
-        // show error message
-      }
+      axios(`/answers/${qID}/${aID}/correct`)
+        .then((res) => {
+          toast.success("Answer marked as correct");
+          window.location.reload();
+        })
+        .catch((error) => {
+          showError(error);
+        });
     };
 
     return (
@@ -373,27 +369,30 @@ function App() {
     const [answerText, setAnswerText] = useState("");
 
     useEffect(() => {
-      axios(`/users/${data.userId}`).then((data) => setUser(data.data));
+      axios(`/users/${data.userId}`)
+        .then((res) => {
+          setUser(res.data.data.user);
+        })
+        .catch((error) => {
+          showError(error);
+        });
     }, []);
     const handleAnswerSubmit = async (e) => {
       e.preventDefault();
+      if (data.userId == decToken.id) {
+        toast.error("You can't answer your own question");
+        setAnswerText("");
+        return;
+      }
       try {
-        const decToken = jwt_decode(userToken);
-        if (data.userId == decToken.id) {
-          toast.error("You can't answer your own question");
-          setAnswerText("");
-          return;
-        }
-        const response = await axios.post(`/questions/${data.id}/answers`, {
+        const res = await axios.post(`/questions/${data.id}/answers`, {
           text: answerText,
           userId: decToken.id,
         });
         toast.success("Answer added");
-        console.log(response.data);
         window.location.reload();
       } catch (error) {
-        toast.error("Error adding answer, log in?");
-        console.log(error);
+        showError(error);
       }
       setAnswerText("");
     };
@@ -438,7 +437,13 @@ function App() {
     const [questions, setQuestions] = useState([]);
 
     useEffect(() => {
-      axios("/questions").then((data) => setQuestions(data.data));
+      axios("/questions").then((res) => {
+        if (res.data.code == "error") {
+          toast.error(res.data.data.message);
+        } else {
+          setQuestions(res.data.data.questions);
+        }
+      });
     }, []);
 
     return (
@@ -454,12 +459,17 @@ function App() {
     const [questions, setQuestions] = useState([]);
 
     useEffect(() => {
-      axios("/questions").then((data) => {
-        const userId = jwt_decode(userToken).id;
-        const myQuestions = data.data.filter((question) => {
-          return question.userId == userId;
-        });
-        setQuestions(myQuestions);
+      axios("/questions").then((res) => {
+        if (res.data.code == "error") {
+          toast.error(res.data.data.message);
+          return;
+        } else {
+          const userId = jwt_decode(userToken).id;
+          const myQuestions = res.data.data.questions.filter((question) => {
+            return question.userId == userId;
+          });
+          setQuestions(myQuestions);
+        }
       });
     }, []);
 
@@ -480,9 +490,9 @@ function App() {
       try {
         const response = await axios.get(`/questions/search/${searchText}`);
 
-        setSearchResults(response.data);
+        setSearchResults(response.data.data.questions);
       } catch (error) {
-        console.error(error);
+        showError(error);
       }
     };
 
@@ -518,22 +528,24 @@ function App() {
 
     const handleSubmit = async (event) => {
       event.preventDefault();
+      // const token = localStorage.getItem("token");
+      if (!userToken) {
+        toast.error("Log in to add a question");
+        return;
+      }
       try {
-        const token = localStorage.getItem("token");
-        const userId = jwt_decode(token).id;
+        const userId = jwt_decode(userToken).id;
         const response = await axios.post("/questions", {
           title,
           text,
           userId,
         });
-        if (response.status >= 200 && response.status <= 299) {
-          toast.success("Question added");
-          setCurrentComp("home");
-          window.location.reload();
-          console.log(response.data);
-        }
+        // if (response.status >= 200 && response.status <= 299) {
+        toast.success("Question added");
+        setCurrentComp("home");
+        window.location.reload();
       } catch (error) {
-        console.error(error);
+        showError(error);
       }
     };
 
@@ -578,7 +590,7 @@ function App() {
   if (currentComp == "home") {
     return (
       <>
-        <Toaster position="top-center" reverseOrder={false} />
+        <Toaster position="bottom-right" reverseOrder={false} />
         <Navbar />;
         <QuestionsList />;
       </>
@@ -587,7 +599,7 @@ function App() {
   if (currentComp == "login") {
     return (
       <>
-        <Toaster position="top-center" reverseOrder={false} />
+        <Toaster position="bottom-right" reverseOrder={false} />
         <Navbar />;
         <Login />;
       </>
@@ -596,7 +608,7 @@ function App() {
   if (currentComp == "register") {
     return (
       <>
-        <Toaster position="top-center" reverseOrder={false} />
+        <Toaster position="bottom-right" reverseOrder={false} />
         <Navbar />;
         <Register />;
       </>
@@ -605,7 +617,7 @@ function App() {
   if (currentComp == "search") {
     return (
       <>
-        <Toaster position="top-center" reverseOrder={false} />
+        <Toaster position="bottom-right" reverseOrder={false} />
         <Navbar />;
         <Search />;
       </>
@@ -614,7 +626,7 @@ function App() {
   if (currentComp == "ask") {
     return (
       <>
-        <Toaster position="top-center" reverseOrder={false} />
+        <Toaster position="bottom-right" reverseOrder={false} />
         <Navbar />;
         <AddQuestion />;
       </>
@@ -623,7 +635,7 @@ function App() {
   if (currentComp == "myQ") {
     return (
       <>
-        <Toaster position="top-center" reverseOrder={false} />
+        <Toaster position="bottom-right" reverseOrder={false} />
         <Navbar />;
         <MyQuestionsList />;
       </>
