@@ -7,13 +7,14 @@ import "./App.css";
 function App() {
   const [currentComp, setCurrentComp] = useState("home");
   const [userToken, setUserToken] = useState("");
-  const [decToken, setDecToken] = useState(() => {
-    try {
-      return jwt_decode(userToken);
-    } catch (error) {
-      return "";
-    }
-  });
+  const [decToken, setDecToken] = useState("");
+  // () => {
+  //   try {
+  //     return jwt_decode(userToken);
+  //   } catch (error) {
+  //     return "";
+  //   }
+  // }
 
   const showError = (error) => {
     console.log(error);
@@ -35,6 +36,7 @@ function App() {
         localStorage.getItem("token") !== "undefined"
       ) {
         setUserToken(localStorage.getItem("token"));
+        setDecToken(jwt_decode(localStorage.getItem("token")));
         setCurrentComp("home");
       }
     } catch (error) {
@@ -297,12 +299,13 @@ function App() {
   const AnswerUser = ({ id }) => {
     const [user, setUser] = useState([]);
     useEffect(() => {
-      try {
-        const res = axios(`/users/${id}`);
-        setUser(res.data.data.user);
-      } catch (error) {
-        showError(error);
-      }
+      axios(`/users/${id}`)
+        .then((res) => {
+          setUser(res.data.data.user);
+        })
+        .catch((error) => {
+          showError(error);
+        });
     }, []);
     return (
       <span>
@@ -310,7 +313,7 @@ function App() {
       </span>
     );
   };
-  const Answer = ({ id, correct }) => {
+  const Answer = ({ id, correct, status }) => {
     const [answers, setAnswers] = useState([]);
 
     useEffect(() => {
@@ -350,14 +353,23 @@ function App() {
                 <AnswerUser id={answer.userId} /> :
                 <span className="text-gray-700">{answer.text}</span>
               </div>
-              {correct && (
-                <button
-                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-4"
-                  onClick={() => handleMarkCorrect(id, answer.id)}
-                >
-                  mark as correct
-                </button>
-              )}
+              {status == "open" &&
+                correct &&
+                (answer.isCorrect ? (
+                  <button
+                    className="bg-gray-600 text-white font-bold py-2 px-4 rounded mr-4"
+                    onClick={() => handleMarkCorrect(id, answer.id)}
+                  >
+                    marked as correct
+                  </button>
+                ) : (
+                  <button
+                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-4"
+                    onClick={() => handleMarkCorrect(id, answer.id)}
+                  >
+                    mark as correct
+                  </button>
+                ))}
             </div>
           );
         })}
@@ -397,7 +409,12 @@ function App() {
       setAnswerText("");
     };
     return (
-      <div key={data.id} className="bg-white shadow p-4 mb-4">
+      <div
+        key={data.id}
+        className={`${
+          data.status == "open" ? "bg-white" : "bg-gray-400"
+        } shadow p-4 mb-4`}
+      >
         <p className="text-gray-600">
           Question by : <strong>{user.name}</strong>
         </p>
@@ -405,31 +422,35 @@ function App() {
         <h2 className="text-lg font-bold">{data.title}</h2>
         <p className="text-gray-700">{data.text}</p>
 
-        <Answer id={data.id} correct={correct} />
-        <form onSubmit={handleAnswerSubmit}>
-          <div className="mt-4">
-            <label
-              htmlFor="answer"
-              className="block text-gray-700 font-bold mb-2"
-            >
-              Your answer:
-            </label>
-            <textarea
-              id="answer"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              value={answerText}
-              onChange={(e) => setAnswerText(e.target.value)}
-            />
-          </div>
-          <div className="mt-4">
-            <button
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              type="submit"
-            >
-              Submit
-            </button>
-          </div>
-        </form>
+        <Answer id={data.id} correct={correct} status={data.status} />
+        {data.status == "open" ? (
+          <form onSubmit={handleAnswerSubmit}>
+            <div className="mt-4">
+              <label
+                htmlFor="answer"
+                className="block text-gray-700 font-bold mb-2"
+              >
+                Your answer:
+              </label>
+              <textarea
+                id="answer"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                value={answerText}
+                onChange={(e) => setAnswerText(e.target.value)}
+              />
+            </div>
+            <div className="mt-4">
+              <button
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                type="submit"
+              >
+                Submit
+              </button>
+            </div>
+          </form>
+        ) : (
+          ""
+        )}
       </div>
     );
   };
@@ -447,7 +468,7 @@ function App() {
     }, []);
 
     return (
-      <div className="p-4">
+      <div className="p-4 w-3/5 mx-auto">
         <h1 className="text-2xl font-bold mb-4">Questions List</h1>
         {questions.map((question) => (
           <Question key={question.id} data={question} />
@@ -474,7 +495,7 @@ function App() {
     }, []);
 
     return (
-      <div className="p-4">
+      <div className="p-4 w-3/5 mx-auto">
         <h1 className="text-2xl font-bold mb-4">Questions List</h1>
         {questions.map((question) => (
           <Question key={question.id} data={question} correct={true} />
@@ -550,9 +571,9 @@ function App() {
     };
 
     return (
-      <form onSubmit={handleSubmit}>
+      <form className="w-1/2 mx-auto" onSubmit={handleSubmit}>
         <div className="mb-4">
-          <label htmlFor="title" className="block text-gray-700 font-bold mb-2">
+          <label htmlFor="title" className="block text-gray-200 font-bold mb-2">
             Title
           </label>
           <input
@@ -565,7 +586,7 @@ function App() {
           />
         </div>
         <div className="mb-4">
-          <label htmlFor="text" className="block text-gray-700 font-bold mb-2">
+          <label htmlFor="text" className="block text-gray-200 font-bold mb-2">
             Description
           </label>
           <textarea
@@ -591,8 +612,8 @@ function App() {
     return (
       <>
         <Toaster position="bottom-right" reverseOrder={false} />
-        <Navbar />;
-        <QuestionsList />;
+        <Navbar />
+        <QuestionsList />
       </>
     );
   }
@@ -600,8 +621,8 @@ function App() {
     return (
       <>
         <Toaster position="bottom-right" reverseOrder={false} />
-        <Navbar />;
-        <Login />;
+        <Navbar />
+        <Login />
       </>
     );
   }
@@ -609,8 +630,8 @@ function App() {
     return (
       <>
         <Toaster position="bottom-right" reverseOrder={false} />
-        <Navbar />;
-        <Register />;
+        <Navbar />
+        <Register />
       </>
     );
   }
@@ -618,8 +639,8 @@ function App() {
     return (
       <>
         <Toaster position="bottom-right" reverseOrder={false} />
-        <Navbar />;
-        <Search />;
+        <Navbar />
+        <Search />
       </>
     );
   }
@@ -627,8 +648,8 @@ function App() {
     return (
       <>
         <Toaster position="bottom-right" reverseOrder={false} />
-        <Navbar />;
-        <AddQuestion />;
+        <Navbar />
+        <AddQuestion />
       </>
     );
   }
@@ -636,8 +657,8 @@ function App() {
     return (
       <>
         <Toaster position="bottom-right" reverseOrder={false} />
-        <Navbar />;
-        <MyQuestionsList />;
+        <Navbar />
+        <MyQuestionsList />
       </>
     );
   }

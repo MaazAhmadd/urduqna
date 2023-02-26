@@ -12,19 +12,23 @@ let jwt_private = process.env.JWT_PRIVATE_KEY || "jwt_private_key";
 // middlewares
 const auth = function (req, res, next) {
   const token = req.header("x-auth-token");
-  if (!token) return res.status(401).send("Access denied. No token provided.");
+  if (!token)
+    return res.sendResponse(401, { message: "kindly login first!." }, "error");
+  // res.status(401).send("kindly login first!.");
   try {
     const decoded = jwt.verify(token, jwt_private);
     req.user = decoded;
     next();
   } catch (ex) {
-    res.status(400).send("Invalid token.");
+    res.sendResponse(400, { message: "kindly login again!." }, "error");
+    // res.status(400).send("Invalid token.");
   }
 };
 const admin = function (req, res, next) {
   // "admin ", req.user;
   if (req.user.role !== "admin") {
-    return res.status(403).send("access denied");
+    return res.sendResponse(403, { message: "you are not admin!" }, "error");
+    // res.status(403).send("access denied");
   }
   next();
 };
@@ -71,6 +75,8 @@ router.get("/questions/:id", async (req, res) => {
   const { id } = req.params;
   try {
     const question = await Question.findByPk(id, { include: Answer });
+    if (!question)
+      return res.sendResponse(404, { message: "question not found" }, "error");
     res.sendResponse(200, { question }, "success");
   } catch (err) {
     console.error(err);
@@ -129,10 +135,18 @@ router.put(
 );
 
 // DELETE an existing question
-router.delete("/questions/:id", [auth, admin], async (req, res) => {
+router.delete("/questions/:id", auth, async (req, res) => {
   const { id } = req.params;
   try {
     const question = await Question.findByPk(id);
+    // Check if the logged in user is the owner of the question
+
+    if (!question)
+      return res.sendResponse(404, { message: "question not found" }, "error");
+
+    if (question.userId !== req.user.id) {
+      return res.sendResponse(403, { message: "Unauthorized" }, "error");
+    }
     await question.destroy();
     res.sendResponse(
       200,
@@ -161,7 +175,6 @@ router.get("/questions/:id/answers", async (req, res) => {
 router.post(
   "/questions/:id/answers",
   body("text").notEmpty().isString(),
-  body("userId").notEmpty(),
   auth,
   async (req, res) => {
     const errors = validationResult(req);
@@ -271,6 +284,9 @@ router.get("/answers/:questionId/:answerId/correct", auth, async (req, res) => {
     // Set the answer to correct
     answer.isCorrect = true;
     await answer.save();
+    question.status = "closed";
+    await question.save();
+
     res.sendResponse(200, { answer }, "success");
   } catch (err) {
     console.error(err);
