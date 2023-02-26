@@ -144,7 +144,8 @@ router.delete("/questions/:id", auth, async (req, res) => {
     if (!question)
       return res.sendResponse(404, { message: "question not found" }, "error");
 
-    if (question.userId !== req.user.id) {
+    if (req.user.role == "admin") {
+    } else if (question.userId !== req.user.id) {
       return res.sendResponse(403, { message: "Unauthorized" }, "error");
     }
     await question.destroy();
@@ -222,10 +223,14 @@ router.put(
 );
 
 // DELETE an existing answer
-router.delete("/answers/:id", [auth, admin], async (req, res) => {
+router.delete("/answers/:id", auth, async (req, res) => {
   const { id } = req.params;
+
   try {
     const answer = await Answer.findByPk(id);
+    if (req.user.role == "admin") {
+    } else if (answer.userId !== req.user.id)
+      return res.sendResponse(403, { message: "not your answer!" }, "error");
     await answer.destroy();
     res.sendResponse(
       200,
@@ -270,7 +275,8 @@ router.get("/answers/:questionId/:answerId/correct", auth, async (req, res) => {
     }
 
     // Check if the logged in user is the owner of the question
-    if (question.userId !== req.user.id) {
+    if (req.user.role == "admin") {
+    } else if (question.userId !== req.user.id) {
       return res.sendResponse(403, { message: "Unauthorized" }, "error");
     }
 

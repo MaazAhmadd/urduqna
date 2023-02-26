@@ -43,7 +43,37 @@ function App() {
       setUserToken("");
       // setCurrentComp("home");
     }
+    // Get the stored scroll position and scroll to it on page load
+    const storedPosition = sessionStorage.getItem("scrollPosition");
+    if (storedPosition) {
+      setTimeout(() => {
+        console.log("scrolling to storedPosition: ", storedPosition);
+        window.scrollTo(0, storedPosition);
+      }, 500);
+    }
+    // const handleWindowLoad = () => {
+    //   window.scrollTo(0, storedPosition);
+    // };
+    // if (storedPosition) {
+    //   console.log("scrolling to storedPosition: ", storedPosition);
+
+    //   window.addEventListener("load", handleWindowLoad);
+    // }
+
+    // Save the scroll position to sessionStorage before page is unloaded
+    const handleBeforeUnload = () => {
+      console.log("storing scroll position: ", window.scrollY);
+      sessionStorage.setItem("scrollPosition", window.scrollY);
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Remove the event listener when component is unmounted
+    return () => {
+      // window.removeEventListener("load", handleWindowLoad);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
   }, []);
+
   const Navbar = () => {
     return (
       <nav className="flex items-center justify-between flex-wrap bg-gray-800 p-6">
@@ -55,7 +85,13 @@ function App() {
           }}
         >
           <span className="font-semibold text-xl tracking-tight">
-            Urdu Q/A Portal
+            Urdu Q/A Portal <br />(
+            {decToken.role == "admin"
+              ? "admin"
+              : decToken.role == "participator"
+              ? "participator"
+              : "public"}
+            )
           </span>
         </div>
         {userToken && (
@@ -319,7 +355,7 @@ function App() {
     useEffect(() => {
       axios(`/questions/${id}/answers`)
         .then((res) => {
-          console.log(res);
+          // console.log(res);
           setAnswers(res.data.data.answers);
         })
         .catch((error) => {
@@ -337,6 +373,17 @@ function App() {
           showError(error);
         });
     };
+    const handleDeleteAnswer = async (aID) => {
+      axios
+        .delete(`/answers/${aID}`)
+        .then((res) => {
+          toast.success("Answer deleted");
+          window.location.reload();
+        })
+        .catch((error) => {
+          showError(error);
+        });
+    };
 
     return (
       <div className="mt-4">
@@ -348,35 +395,49 @@ function App() {
                ${
                  answer.isCorrect ? "bg-green-500" : "bg-gray-200"
                } p-2 rounded-lg mb-2`}
+              onClick={() => {
+                console.log(decToken);
+                console.log(answer);
+              }}
             >
               <div>
                 <AnswerUser id={answer.userId} /> :
                 <span className="text-gray-700">{answer.text}</span>
               </div>
               {status == "open" &&
-                correct &&
-                (answer.isCorrect ? (
+                (decToken.role == "admin" || decToken.id == answer.userId) && (
                   <button
-                    className="bg-gray-600 text-white font-bold py-2 px-4 rounded mr-4"
-                    onClick={() => handleMarkCorrect(id, answer.id)}
+                    className="bg-red-600 text-white font-bold py-2 px-4 rounded mr-4"
+                    onClick={() => handleDeleteAnswer(answer.id)}
                   >
-                    marked as correct
+                    delete answer
                   </button>
-                ) : (
+                )}
+              {decToken.role == "admin" && status == "open" ? (
+                <button
+                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-4"
+                  onClick={() => handleMarkCorrect(id, answer.id)}
+                >
+                  mark as correct
+                </button>
+              ) : (
+                status == "open" &&
+                correct && (
                   <button
                     className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-4"
                     onClick={() => handleMarkCorrect(id, answer.id)}
                   >
                     mark as correct
                   </button>
-                ))}
+                )
+              )}
             </div>
           );
         })}
       </div>
     );
   };
-  const Question = ({ data, correct }) => {
+  const Question = ({ data, correct, del }) => {
     const [user, setUser] = useState([]);
     const [answerText, setAnswerText] = useState("");
 
@@ -408,6 +469,17 @@ function App() {
       }
       setAnswerText("");
     };
+    const handleQuestionDelete = async (e) => {
+      e.preventDefault();
+      try {
+        const res = await axios.delete(`/questions/${data.id}`);
+        toast.success("Question deleted");
+        window.location.reload();
+      } catch (error) {
+        showError(error);
+      }
+    };
+
     return (
       <div
         key={data.id}
@@ -415,12 +487,31 @@ function App() {
           data.status == "open" ? "bg-white" : "bg-gray-400"
         } shadow p-4 mb-4`}
       >
-        <p className="text-gray-600">
-          Question by : <strong>{user.name}</strong>
-        </p>
+        <div className="text-gray-600 flex justify-between">
+          <p>
+            Question by : <strong>{user.name}</strong>
+          </p>
+          {decToken.role == "admin" ? (
+            <button
+              onClick={handleQuestionDelete}
+              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
+              delete question
+            </button>
+          ) : (
+            del && (
+              <button
+                onClick={handleQuestionDelete}
+                className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                delete question
+              </button>
+            )
+          )}
+        </div>
         <h3 className="text-lg text-gray-700">Status : {data.status}</h3>
-        <h2 className="text-lg font-bold">{data.title}</h2>
-        <p className="text-gray-700">{data.text}</p>
+        <h2 className="text-lg font-bold">title : {data.title}</h2>
+        <p className="text-gray-700">description : {data.text}</p>
 
         <Answer id={data.id} correct={correct} status={data.status} />
         {data.status == "open" ? (
@@ -498,7 +589,12 @@ function App() {
       <div className="p-4 w-3/5 mx-auto">
         <h1 className="text-2xl font-bold mb-4">Questions List</h1>
         {questions.map((question) => (
-          <Question key={question.id} data={question} correct={true} />
+          <Question
+            key={question.id}
+            data={question}
+            correct={true}
+            del={true}
+          />
         ))}
       </div>
     );
