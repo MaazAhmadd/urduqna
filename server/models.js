@@ -81,6 +81,18 @@ const Answer = sequelize.define("answer", {
   },
 });
 
+const LanguageSetting = sequelize.define("LanguageSetting", {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+  minimumPercentage: {
+    type: DataTypes.FLOAT,
+    allowNull: false,
+  },
+});
+
 User.hasMany(Question);
 Question.belongsTo(User);
 User.hasMany(Answer);
@@ -92,4 +104,5 @@ module.exports = {
   User,
   Question,
   Answer,
+  LanguageSetting,
 };

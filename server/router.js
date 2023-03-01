@@ -1,7 +1,7 @@
 // Import necessary modules
 const express = require("express");
 const router = express.Router();
-const { User, Question, Answer } = require("./models");
+const { User, Question, Answer, LanguageSetting } = require("./models");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { Op } = require("sequelize");
@@ -31,6 +31,42 @@ const admin = function (req, res, next) {
     // res.status(403).send("access denied");
   }
   next();
+};
+
+const checkPercentage = async (req, res, next) => {
+  const percentage = await LanguageSetting.findOne();
+  //{ where: { id: 1 } }
+  // assuming the percentage is stored in the Settings table with id 1
+
+  const englishLettersRegex = /[A-Za-z\s\.,;:'"?!()-]/;
+  let { text } = req.body;
+
+  let englishLettersCount = 0;
+  let totalLettersCount = 0;
+  text = text.replaceAll(" ", "");
+  for (let i = 0; i < text.length; i++) {
+    console.log(text[i]);
+    if (englishLettersRegex.test(text[i])) {
+      englishLettersCount++;
+    }
+    totalLettersCount++;
+  }
+  let currentPercentage = englishLettersCount / totalLettersCount;
+  let setPercentage = percentage.minimumPercentage / 100;
+  // console.log("====================================");
+  // console.log(currentPercentage, " and ", setPercentage);
+  // console.log("====================================");
+  if (currentPercentage <= setPercentage) {
+    next();
+  } else {
+    res.sendResponse(
+      400,
+      {
+        message: `Question/Answer must not contain more than ${percentage.minimumPercentage}% English letters.`,
+      },
+      "error"
+    );
+  }
 };
 
 function createResponse(type, response, token, role) {
@@ -89,15 +125,16 @@ router.post(
   "/questions",
   body("title").notEmpty().isString(),
   body("text").notEmpty().isString(),
-  body("userId").notEmpty().isNumeric(),
+  // body("userId").notEmpty().isNumeric(),
   auth,
+  checkPercentage,
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-
-    const { title, text, userId } = req.body;
+    const { title, text } = req.body;
+    const userId = req.user.id;
     try {
       const question = await Question.create({ title, text, userId });
       res.sendResponse(200, { question }, "success");
@@ -114,6 +151,7 @@ router.put(
   body("title").notEmpty().isString(),
   body("text").notEmpty().isString(),
   auth,
+  checkPercentage,
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -121,8 +159,15 @@ router.put(
     }
     const { id } = req.params;
     const { title, text } = req.body;
+
     try {
       const question = await Question.findByPk(id);
+      if (!req.user.role == "admin" || question.userId !== req.user.id)
+        return res.sendResponse(
+          403,
+          { message: "you're not the owner of this question" },
+          "error"
+        );
       question.title = title;
       question.text = text;
       await question.save();
@@ -177,13 +222,15 @@ router.post(
   "/questions/:id/answers",
   body("text").notEmpty().isString(),
   auth,
+  checkPercentage,
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const { text, userId } = req.body;
+    const { text } = req.body;
     const { id } = req.params;
+    const userId = req.user.id;
     try {
       const answer = await Answer.create({
         text,
@@ -203,6 +250,7 @@ router.put(
   "/answers/:id",
   body("text").notEmpty().isString(),
   auth,
+  checkPercentage,
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -486,5 +534,39 @@ router.get("/users/:id", async (req, res) => {
     res.sendResponse(500, { message: "couldn't find User" }, "error");
   }
 });
+
+// Update minimum percentage for English words
+router.put(
+  "/language-setting",
+  body("minimumPercentage").notEmpty().isNumeric(),
+  auth,
+  admin,
+  async (req, res) => {
+    try {
+      const { minimumPercentage } = req.body;
+      if (minimumPercentage < 0 || minimumPercentage > 100) {
+        return res.sendResponse(
+          400,
+          { message: "minimumPercentage must be between 0 and 100" },
+          "error"
+        );
+      }
+      let languageSetting = await LanguageSetting.findOne();
+      if (!languageSetting) {
+        languageSetting = await LanguageSetting.create({ minimumPercentage });
+      }
+
+      await languageSetting.update({ minimumPercentage });
+
+      res.sendResponse(
+        200,
+        { message: "percentage updated successfully" },
+        "success"
+      );
+    } catch (error) {
+      res.sendResponse(500, { message: "Internal server error" }, "error");
+    }
+  }
+);
 
 module.exports = router;

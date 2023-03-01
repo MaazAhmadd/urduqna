@@ -267,70 +267,72 @@ function App() {
     };
 
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-100">
-        <div className="bg-white rounded shadow p-8 max-w-sm w-full">
-          <h1 className="text-2xl font-bold mb-4 text-center">Register</h1>
-          <form onSubmit={handleSubmit} className="w-1/2">
-            <h2 className="text-2xl font-medium mb-6">Login</h2>
-            <div className="mb-4">
-              <label
-                htmlFor="name"
-                className="block text-gray-400 font-medium mb-2"
-              >
-                Name
-              </label>
-              <input
-                type="name"
-                id="name"
-                className="w-full border rounded py-2 px-3 text-gray-400 leading-tight focus:outline-none focus:shadow-outline"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-            </div>
-            <div className="mb-4">
-              <label
-                htmlFor="email"
-                className="block text-gray-400 font-medium mb-2"
-              >
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                className="w-full border rounded py-2 px-3 text-gray-400 leading-tight focus:outline-none focus:shadow-outline"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-            </div>
-            <div className="mb-4">
-              <label
-                htmlFor="password"
-                className="block text-gray-400 font-medium mb-2"
-              >
-                Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                className="w-full border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+      // <div className="flex justify-center items-center h-screen bg-gray-100">
+      //   <div className="bg-white rounded shadow p-8 max-w-sm w-full">
+
+      //     <h1 className="text-2xl font-bold mb-4 text-center">Register</h1>
+      <div className="flex justify-center items-center mt-28">
+        <form onSubmit={handleSubmit} className="w-1/2">
+          <h2 className="text-2xl font-medium mb-6">Register</h2>
+          <div className="mb-4">
+            <label
+              htmlFor="name"
+              className="block text-gray-400 font-medium mb-2"
             >
-              Login
-            </button>
-          </form>
-          <form onSubmit={handleSubmit}>
+              Name
+            </label>
+            <input
+              type="text"
+              id="name"
+              className="w-full border rounded py-2 px-3 text-gray-400 leading-tight focus:outline-none focus:shadow-outline"
+              placeholder="Enter your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label
+              htmlFor="email"
+              className="block text-gray-400 font-medium mb-2"
+            >
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              className="w-full border rounded py-2 px-3 text-gray-400 leading-tight focus:outline-none focus:shadow-outline"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label
+              htmlFor="password"
+              className="block text-gray-400 font-medium mb-2"
+            >
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              className="w-full border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            className="bg-blue-500 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          >
+            Login
+          </button>
+        </form>
+        {/* <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label
                 htmlFor="name"
@@ -387,9 +389,10 @@ function App() {
                 Register
               </button>
             </div>
-          </form>
-        </div>
+          </form> */}
       </div>
+      //   </div>
+      // </div>
     );
   };
   const AnswerUser = ({ id }) => {
@@ -527,7 +530,7 @@ function App() {
       } catch (error) {
         showError(error);
       }
-      setAnswerText("");
+      // setAnswerText("");
     };
     const handleQuestionDelete = async (e) => {
       e.preventDefault();
@@ -674,22 +677,21 @@ function App() {
     };
 
     return (
-      <div className="flex flex-col items-center justify-center">
-        <div className="flex items-center justify-center my-4">
-          <input
-            type="text"
-            placeholder="Search questions"
-            className="border border-gray-400 rounded-l-md py-2 px-4 w-full"
-            value={searchText}
-            onChange={(event) => setSearchText(event.target.value)}
-          />
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-md"
-            onClick={handleSearch}
-          >
-            Search
-          </button>
-        </div>
+      // <div className="flex flex-col items-center justify-center">
+      <div className="mx-auto w-3/5 p-4 flex items-center justify-center">
+        <input
+          type="text"
+          placeholder="Search questions"
+          className="border border-gray-400 rounded-l-md py-2 px-4 w-full"
+          value={searchText}
+          onChange={(event) => setSearchText(event.target.value)}
+        />
+        <button
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-md"
+          onClick={handleSearch}
+        >
+          Search
+        </button>
         {searchResults.map((result) => (
           <div key={result.id} className="bg-white shadow p-4  my-4">
             <h3 className="font-bold">{result.title}</h3>
@@ -699,6 +701,9 @@ function App() {
       </div>
     );
   };
+  {
+    /* </div> */
+  }
   const AddQuestion = () => {
     const [title, setTitle] = useState("");
     const [text, setText] = useState("");
@@ -711,11 +716,11 @@ function App() {
         return;
       }
       try {
-        const userId = jwt_decode(userToken).id;
+        // const userId = jwt_decode(userToken).id;
         const response = await axios.post("/questions", {
           title,
           text,
-          userId,
+          // userId,
         });
         // if (response.status >= 200 && response.status <= 299) {
         toast.success("Question added");
@@ -727,7 +732,7 @@ function App() {
     };
 
     return (
-      <form className="w-1/2 mx-auto" onSubmit={handleSubmit}>
+      <form className="p-4 w-3/5 mx-auto" onSubmit={handleSubmit}>
         <div className="mb-4">
           <label htmlFor="title" className="block text-gray-200 font-bold mb-2">
             Title
