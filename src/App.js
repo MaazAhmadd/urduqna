@@ -8,13 +8,6 @@ function App() {
   const [currentComp, setCurrentComp] = useState("home");
   const [userToken, setUserToken] = useState("");
   const [decToken, setDecToken] = useState("");
-  // () => {
-  //   try {
-  //     return jwt_decode(userToken);
-  //   } catch (error) {
-  //     return "";
-  //   }
-  // }
 
   const showError = (error) => {
     console.log(error);
@@ -136,6 +129,18 @@ function App() {
         >
           <span className="font-semibold text-xl tracking-tight">Search</span>
         </div>
+        {decToken.role == "admin" && (
+          <div
+            className={`flex items-center flex-shrink-0 text-white mr-6 cursor-pointer ${
+              currentComp == "engPerc" ? "border-2 p-2" : ""
+            }`}
+            onClick={() => {
+              setCurrentComp("engPerc");
+            }}
+          >
+            <span className="font-semibold text-xl tracking-tight">Admin</span>
+          </div>
+        )}
         {userToken ? (
           <div className="flex">
             <button
@@ -329,7 +334,7 @@ function App() {
             type="submit"
             className="bg-blue-500 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           >
-            Login
+            Register
           </button>
         </form>
         {/* <form onSubmit={handleSubmit}>
@@ -407,9 +412,9 @@ function App() {
         });
     }, []);
     return (
-      <span>
-        <strong>{user.name}</strong>
-      </span>
+      <div>
+        <strong>{user.name} : </strong>
+      </div>
     );
   };
   const Answer = ({ id, correct, status }) => {
@@ -464,36 +469,44 @@ function App() {
               }}
             >
               <div>
-                <AnswerUser id={answer.userId} /> :
-                <span className="text-gray-700">{answer.text}</span>
+                <div>
+                  <AnswerUser id={answer.userId} />
+                </div>
+                <div className="text-gray-700 max-w-lg break-words">
+                  {answer.text}
+                </div>
               </div>
-              {status == "open" &&
-                (decToken.role == "admin" || decToken.id == answer.userId) && (
+
+              <div className="text-right">
+                {status == "open" &&
+                  (decToken.role == "admin" ||
+                    decToken.id == answer.userId) && (
+                    <button
+                      className="w-40 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mr-4"
+                      onClick={() => handleDeleteAnswer(answer.id)}
+                    >
+                      delete answer
+                    </button>
+                  )}
+                {decToken.role == "admin" && status == "open" ? (
                   <button
-                    className="bg-red-600 text-white font-bold py-2 px-4 rounded mr-4"
-                    onClick={() => handleDeleteAnswer(answer.id)}
-                  >
-                    delete answer
-                  </button>
-                )}
-              {decToken.role == "admin" && status == "open" ? (
-                <button
-                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-4"
-                  onClick={() => handleMarkCorrect(id, answer.id)}
-                >
-                  mark as correct
-                </button>
-              ) : (
-                status == "open" &&
-                correct && (
-                  <button
-                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-4"
+                    className="w-40 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-4"
                     onClick={() => handleMarkCorrect(id, answer.id)}
                   >
                     mark as correct
                   </button>
-                )
-              )}
+                ) : (
+                  status == "open" &&
+                  correct && (
+                    <button
+                      className="w-40 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-4"
+                      onClick={() => handleMarkCorrect(id, answer.id)}
+                    >
+                      mark as correct
+                    </button>
+                  )
+                )}
+              </div>
             </div>
           );
         })}
@@ -574,7 +587,9 @@ function App() {
         </div>
         <h3 className="text-lg text-gray-700">Status : {data.status}</h3>
         <h2 className="text-lg font-bold">title : {data.title}</h2>
-        <p className="text-gray-700">description : {data.text}</p>
+        <p className="text-gray-700 max-w-lg break-words">
+          description : {data.text}
+        </p>
 
         <Answer id={data.id} correct={correct} status={data.status} />
         {data.status == "open" ? (
@@ -678,32 +693,81 @@ function App() {
 
     return (
       // <div className="flex flex-col items-center justify-center">
-      <div className="mx-auto w-3/5 p-4 flex items-center justify-center">
-        <input
-          type="text"
-          placeholder="Search questions"
-          className="border border-gray-400 rounded-l-md py-2 px-4 w-full"
-          value={searchText}
-          onChange={(event) => setSearchText(event.target.value)}
-        />
-        <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-md"
-          onClick={handleSearch}
-        >
-          Search
-        </button>
-        {searchResults.map((result) => (
-          <div key={result.id} className="bg-white shadow p-4  my-4">
-            <h3 className="font-bold">{result.title}</h3>
-            <p>{result.text}</p>
-          </div>
-        ))}
+
+      <div className="mt-8">
+        <h2 className="text-2xl font-medium mb-6 text-center">
+          Search Questions
+        </h2>
+        <div className="mx-auto w-3/5 p-4 flex items-center justify-center">
+          <input
+            type="text"
+            placeholder="Search questions"
+            className="focus:outline-none border border-gray-400 rounded-l-md py-2 px-4 w-full"
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+          />
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-md"
+            onClick={handleSearch}
+          >
+            Search
+          </button>
+          {searchResults.map((result) => (
+            <div key={result.id} className="bg-white shadow p-4  my-4">
+              <h3 className="font-bold">{result.title}</h3>
+              <p>{result.text}</p>
+            </div>
+          ))}
+        </div>
       </div>
     );
   };
-  {
-    /* </div> */
-  }
+  const SetPercentage = () => {
+    const [minimumPercentage, setMinimumPercentage] = useState("");
+
+    const handleInputChange = (event) => {
+      setMinimumPercentage(event.target.value);
+    };
+
+    const handleFormSubmit = async (event) => {
+      event.preventDefault();
+      try {
+        await axios.put("/language-setting", { minimumPercentage });
+        toast.success("Minimum percentage updated successfully!");
+      } catch (error) {
+        showError(error);
+      }
+    };
+
+    return (
+      <div className="mt-8">
+        <h2 className="text-2xl font-medium mb-6 text-center">
+          Set Minimum Percentage
+        </h2>
+        <div className="mx-auto w-3/5 p-4 flex items-center justify-center">
+          <input
+            className="focus:outline-none border border-gray-400 rounded-l-md py-2 px-4 w-full"
+            id="minimumPercentage"
+            type="number"
+            min="0"
+            max="100"
+            value={minimumPercentage}
+            onChange={handleInputChange}
+            required
+            placeholder="Enter Percentage"
+          />
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-md"
+            type="submit"
+            onClick={handleFormSubmit}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    );
+  };
+  // </div>
   const AddQuestion = () => {
     const [title, setTitle] = useState("");
     const [text, setText] = useState("");
@@ -730,7 +794,6 @@ function App() {
         showError(error);
       }
     };
-
     return (
       <form className="p-4 w-3/5 mx-auto" onSubmit={handleSubmit}>
         <div className="mb-4">
@@ -820,6 +883,15 @@ function App() {
         <Toaster position="bottom-right" reverseOrder={false} />
         <Navbar />
         <MyQuestionsList />
+      </>
+    );
+  }
+  if (currentComp == "engPerc") {
+    return (
+      <>
+        <Toaster position="bottom-right" reverseOrder={false} />
+        <Navbar />
+        <SetPercentage />
       </>
     );
   }

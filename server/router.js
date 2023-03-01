@@ -535,6 +535,22 @@ router.get("/users/:id", async (req, res) => {
   }
 });
 
+router.get("/language-setting", async (req, res) => {
+  try {
+    let languageSetting = await LanguageSetting.findOne();
+    res.sendResponse(
+      200,
+      { minimumPercentage: languageSetting.minimumPercentage },
+      "success"
+    );
+  } catch (error) {
+    res.sendResponse(
+      500,
+      { message: "couldn't get minimum percentage" },
+      "error"
+    );
+  }
+});
 // Update minimum percentage for English words
 router.put(
   "/language-setting",

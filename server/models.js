@@ -90,6 +90,7 @@ const LanguageSetting = sequelize.define("LanguageSetting", {
   minimumPercentage: {
     type: DataTypes.FLOAT,
     allowNull: false,
+    defaultValue: 20,
   },
 });
 
