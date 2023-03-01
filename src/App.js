@@ -194,20 +194,20 @@ function App() {
     };
 
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center mt-28">
         <form onSubmit={handleSubmit} className="w-1/2">
           <h2 className="text-2xl font-medium mb-6">Login</h2>
           <div className="mb-4">
             <label
               htmlFor="email"
-              className="block text-gray-700 font-medium mb-2"
+              className="block text-gray-400 font-medium mb-2"
             >
               Email
             </label>
             <input
               type="email"
               id="email"
-              className="w-full border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="w-full border rounded py-2 px-3 text-gray-400 leading-tight focus:outline-none focus:shadow-outline"
               placeholder="Enter your email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -217,7 +217,7 @@ function App() {
           <div className="mb-4">
             <label
               htmlFor="password"
-              className="block text-gray-700 font-medium mb-2"
+              className="block text-gray-400 font-medium mb-2"
             >
               Password
             </label>
@@ -270,6 +270,66 @@ function App() {
       <div className="flex justify-center items-center h-screen bg-gray-100">
         <div className="bg-white rounded shadow p-8 max-w-sm w-full">
           <h1 className="text-2xl font-bold mb-4 text-center">Register</h1>
+          <form onSubmit={handleSubmit} className="w-1/2">
+            <h2 className="text-2xl font-medium mb-6">Login</h2>
+            <div className="mb-4">
+              <label
+                htmlFor="name"
+                className="block text-gray-400 font-medium mb-2"
+              >
+                Name
+              </label>
+              <input
+                type="name"
+                id="name"
+                className="w-full border rounded py-2 px-3 text-gray-400 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+            </div>
+            <div className="mb-4">
+              <label
+                htmlFor="email"
+                className="block text-gray-400 font-medium mb-2"
+              >
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                className="w-full border rounded py-2 px-3 text-gray-400 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+            </div>
+            <div className="mb-4">
+              <label
+                htmlFor="password"
+                className="block text-gray-400 font-medium mb-2"
+              >
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                className="w-full border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
+              Login
+            </button>
+          </form>
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label
