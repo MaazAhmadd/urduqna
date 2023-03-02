@@ -477,7 +477,6 @@ router.post(
 //   }
 // });
 // GET a single user by ID
-
 router.post(
   "/register",
   body("name").notEmpty().trim().escape().isLength({ min: 3 }),
@@ -521,6 +520,15 @@ router.post(
   }
 );
 
+router.get("/users", auth, admin, async (req, res) => {
+  try {
+    const users = await User.findAll();
+    res.sendResponse(200, { users }, "success");
+  } catch (err) {
+    res.sendResponse(500, { message: "couldn't find Users" }, "error");
+  }
+});
+
 router.get("/users/:id", async (req, res) => {
   const { id } = req.params;
   try {
@@ -532,6 +540,25 @@ router.get("/users/:id", async (req, res) => {
     }
   } catch (err) {
     res.sendResponse(500, { message: "couldn't find User" }, "error");
+  }
+});
+
+router.delete("/users/:id", auth, admin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await User.findByPk(id);
+    if (!user) {
+      res.sendResponse(404, { message: "User not found" }, "error");
+    } else {
+      await user.destroy();
+      res.sendResponse(
+        200,
+        { message: "User deleted successfully" },
+        "success"
+      );
+    }
+  } catch (err) {
+    res.sendResponse(500, { message: "couldn't delete User" }, "error");
   }
 });
 

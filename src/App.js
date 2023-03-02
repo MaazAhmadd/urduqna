@@ -722,52 +722,6 @@ function App() {
       </div>
     );
   };
-  const SetPercentage = () => {
-    const [minimumPercentage, setMinimumPercentage] = useState("");
-
-    const handleInputChange = (event) => {
-      setMinimumPercentage(event.target.value);
-    };
-
-    const handleFormSubmit = async (event) => {
-      event.preventDefault();
-      try {
-        await axios.put("/language-setting", { minimumPercentage });
-        toast.success("Minimum percentage updated successfully!");
-      } catch (error) {
-        showError(error);
-      }
-    };
-
-    return (
-      <div className="mt-8">
-        <h2 className="text-2xl font-medium mb-6 text-center">
-          Set Minimum Percentage
-        </h2>
-        <div className="mx-auto w-3/5 p-4 flex items-center justify-center">
-          <input
-            className="focus:outline-none border border-gray-400 rounded-l-md py-2 px-4 w-full"
-            id="minimumPercentage"
-            type="number"
-            min="0"
-            max="100"
-            value={minimumPercentage}
-            onChange={handleInputChange}
-            required
-            placeholder="Enter Percentage"
-          />
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-md"
-            type="submit"
-            onClick={handleFormSubmit}
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    );
-  };
-  // </div>
   const AddQuestion = () => {
     const [title, setTitle] = useState("");
     const [text, setText] = useState("");
@@ -832,6 +786,107 @@ function App() {
       </form>
     );
   };
+  const SetPercentage = () => {
+    const [minimumPercentage, setMinimumPercentage] = useState("");
+
+    const handleInputChange = (event) => {
+      setMinimumPercentage(event.target.value);
+    };
+
+    const handleFormSubmit = async (event) => {
+      event.preventDefault();
+      try {
+        await axios.put("/language-setting", { minimumPercentage });
+        toast.success("Minimum percentage updated successfully!");
+      } catch (error) {
+        showError(error);
+      }
+    };
+
+    return (
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-6 text-center text-white">
+          Set Minimum Percentage
+        </h2>
+        <div className="mx-auto w-3/5 p-4 flex items-center justify-center">
+          <input
+            className="focus:outline-none border border-gray-400 rounded-l-md py-2 px-4 w-full"
+            id="minimumPercentage"
+            type="number"
+            min="0"
+            max="100"
+            value={minimumPercentage}
+            onChange={handleInputChange}
+            required
+            placeholder="Enter Percentage"
+          />
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-md"
+            type="submit"
+            onClick={handleFormSubmit}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    );
+  };
+  const UserAdmin = () => {
+    const [users, setUsers] = useState([]);
+    useEffect(() => {
+      axios("/users")
+        .then((response) => {
+          setUsers(response.data.data.users);
+        })
+        .catch((error) => {
+          showError(error);
+        });
+    }, []);
+    const handleDelete = (id) => {
+      axios
+        .delete(`/users/${id}`)
+        .then((res) => {
+          toast.success(res.data.data.message);
+          setUsers((usrs) => {
+            console.log(usrs);
+            let filteredU = usrs.filter((u) => !(u.id == id));
+            console.log(filteredU);
+            return filteredU;
+          });
+        })
+        .catch((error) => {
+          showError(error);
+        });
+    };
+    return (
+      <div className="mx-auto w-3/5 p-4 flex justify-center flex-col">
+        <h1 className="text-lg font-bold text-white">All Users</h1>
+        <br />
+        {users.map((user) => {
+          return (
+            <div key={user.id}>
+              <div className="flex rounded-lg justify-between text-lg p-4 text-gray-600 bg-white ">
+                <div>
+                  <h2>{user.name}</h2>
+                  <h2>{user.email}</h2>
+                </div>
+                <div>
+                  <button
+                    onClick={() => handleDelete(user.id)}
+                    className="w-24 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mr-4"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+              <br />
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   if (currentComp == "home") {
     return (
       <>
@@ -892,6 +947,7 @@ function App() {
         <Toaster position="bottom-right" reverseOrder={false} />
         <Navbar />
         <SetPercentage />
+        <UserAdmin />
       </>
     );
   }
