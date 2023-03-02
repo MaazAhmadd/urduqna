@@ -403,7 +403,7 @@ function App() {
                 <div>
                   <AnswerUser id={answer.userId} />
                 </div>
-                <div className="text-gray-700 max-w-lg break-words">
+                <div className="text-gray-700 break-words max-w-3xl">
                   {answer.text}
                 </div>
               </div>
@@ -518,10 +518,8 @@ function App() {
           )}
         </div>
         <h3 className="text-lg text-gray-700">Status : {status}</h3>
-        <h2 className="text-lg font-bold">title : {data.title}</h2>
-        <p className="text-gray-700 max-w-lg break-words">
-          description : {data.text}
-        </p>
+        <h2 className="text-lg font-bold break-words">title : {data.title}</h2>
+        <p className="text-gray-700 break-words">description : {data.text}</p>
 
         <Answer
           id={data.id}
@@ -630,7 +628,6 @@ function App() {
 
     return (
       // <div className="flex flex-col items-center justify-center">
-
       <div className="mt-8">
         <h2 className="text-2xl font-medium mb-6 text-center">
           Search Questions
@@ -649,10 +646,20 @@ function App() {
           >
             Search
           </button>
+          <div />
+        </div>
+        <div className="mx-auto flex flex-col w-3/5 p-4">
           {searchResults.map((result) => (
-            <div key={result.id} className="bg-white shadow p-4  my-4">
-              <h3 className="font-bold">{result.title}</h3>
-              <p>{result.text}</p>
+            <div
+              key={result.id}
+              className="bg-white rounded-xl shadow p-4  my-4"
+            >
+              <h3 className="font-bold max-w-full break-words">
+                title : {result.title}
+              </h3>
+              <p className="max-w-full break-words">
+                description : {result.text}
+              </p>
             </div>
           ))}
         </div>
