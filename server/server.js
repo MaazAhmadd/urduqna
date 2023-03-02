@@ -1,4 +1,3 @@
-// Import required modules
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -10,10 +9,8 @@ process.on("uncaughtException", function (err) {
   console.log("Caught exception: ", err);
 });
 
-// Define the express app
 const app = express();
 
-// Set up middleware
 app.use(cors());
 app.use(bodyParser.json());
 app.use((req, res, next) => {
@@ -27,10 +24,9 @@ app.use((req, res, next) => {
   };
   next();
 });
-// Define routes
+
 app.use("/api", questionsRouter);
 
-// Set up database connection and synchronize the models
 (async () => {
   try {
     await sequelize.authenticate();
@@ -45,7 +41,6 @@ app.use("/api", questionsRouter);
   }
 })();
 
-// Start the server
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
   console.log(`Server is running on port ${port}.`);

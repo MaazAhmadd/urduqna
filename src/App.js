@@ -34,9 +34,7 @@ function App() {
       }
     } catch (error) {
       setUserToken("");
-      // setCurrentComp("home");
     }
-    // Get the stored scroll position and scroll to it on page load
     const storedPosition = sessionStorage.getItem("scrollPosition");
     if (storedPosition) {
       setTimeout(() => {
@@ -44,25 +42,14 @@ function App() {
         window.scrollTo(0, storedPosition);
       }, 500);
     }
-    // const handleWindowLoad = () => {
-    //   window.scrollTo(0, storedPosition);
-    // };
-    // if (storedPosition) {
-    //   console.log("scrolling to storedPosition: ", storedPosition);
 
-    //   window.addEventListener("load", handleWindowLoad);
-    // }
-
-    // Save the scroll position to sessionStorage before page is unloaded
     const handleBeforeUnload = () => {
       console.log("storing scroll position: ", window.scrollY);
       sessionStorage.setItem("scrollPosition", window.scrollY);
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
 
-    // Remove the event listener when component is unmounted
     return () => {
-      // window.removeEventListener("load", handleWindowLoad);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, []);
@@ -160,7 +147,6 @@ function App() {
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-4"
               onClick={() => {
                 setCurrentComp("login");
-                // window.location.reload();
               }}
             >
               Login
@@ -169,7 +155,6 @@ function App() {
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
               onClick={() => {
                 setCurrentComp("register");
-                // window.location.reload();
               }}
             >
               Register
@@ -264,18 +249,12 @@ function App() {
         toast.success("Registration Successful");
         setCurrentComp("home");
         window.location.reload();
-
-        // redirect to dashboard or home page
       } catch (error) {
         showError(error);
       }
     };
 
     return (
-      // <div className="flex justify-center items-center h-screen bg-gray-100">
-      //   <div className="bg-white rounded shadow p-8 max-w-sm w-full">
-
-      //     <h1 className="text-2xl font-bold mb-4 text-center">Register</h1>
       <div className="flex justify-center items-center mt-28">
         <form onSubmit={handleSubmit} className="w-1/2">
           <h2 className="text-2xl font-medium mb-6">Register</h2>
@@ -337,67 +316,7 @@ function App() {
             Register
           </button>
         </form>
-        {/* <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label
-                htmlFor="name"
-                className="block text-gray-700 font-bold mb-2"
-              >
-                Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                id="name"
-                className="border rounded-lg px-3 py-2 w-full"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="mb-4">
-              <label
-                htmlFor="email"
-                className="block text-gray-700 font-bold mb-2"
-              >
-                Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                id="email"
-                className="border rounded-lg px-3 py-2 w-full"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="mb-6">
-              <label
-                htmlFor="password"
-                className="block text-gray-700 font-bold mb-2"
-              >
-                Password
-              </label>
-              <input
-                type="password"
-                name="password"
-                id="password"
-                className="border rounded-lg px-3 py-2 w-full"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <div className="flex justify-center">
-              <button
-                type="submit"
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              >
-                Register
-              </button>
-            </div>
-          </form> */}
       </div>
-      //   </div>
-      // </div>
     );
   };
   const AnswerUser = ({ id }) => {
@@ -417,8 +336,9 @@ function App() {
       </div>
     );
   };
-  const Answer = ({ id, correct, status }) => {
+  const Answer = ({ id, correct, status, setStatus }) => {
     const [answers, setAnswers] = useState([]);
+    // const [qStatus, SetQStatus] = useState(status);
 
     useEffect(() => {
       axios(`/questions/${id}/answers`)
@@ -435,7 +355,16 @@ function App() {
       axios(`/answers/${qID}/${aID}/correct`)
         .then((res) => {
           toast.success("Answer marked as correct");
-          window.location.reload();
+          setAnswers((ans) => {
+            return ans.map((a) => {
+              if (a.id == aID) {
+                return { ...a, isCorrect: true };
+              } else {
+                return { ...a, isCorrect: false };
+              }
+            });
+          });
+          setStatus("closed");
         })
         .catch((error) => {
           showError(error);
@@ -446,7 +375,9 @@ function App() {
         .delete(`/answers/${aID}`)
         .then((res) => {
           toast.success("Answer deleted");
-          window.location.reload();
+          setAnswers((ans) => {
+            return ans.filter((a) => a.id != aID);
+          });
         })
         .catch((error) => {
           showError(error);
@@ -516,6 +447,7 @@ function App() {
   const Question = ({ data, correct, del }) => {
     const [user, setUser] = useState([]);
     const [answerText, setAnswerText] = useState("");
+    const [status, setStatus] = useState(data.status);
 
     useEffect(() => {
       axios(`/users/${data.userId}`)
@@ -560,7 +492,7 @@ function App() {
       <div
         key={data.id}
         className={`${
-          data.status == "open" ? "bg-white" : "bg-gray-400"
+          status == "open" ? "bg-white" : "bg-gray-400"
         } shadow p-4 mb-4`}
       >
         <div className="text-gray-600 flex justify-between">
@@ -585,14 +517,19 @@ function App() {
             )
           )}
         </div>
-        <h3 className="text-lg text-gray-700">Status : {data.status}</h3>
+        <h3 className="text-lg text-gray-700">Status : {status}</h3>
         <h2 className="text-lg font-bold">title : {data.title}</h2>
         <p className="text-gray-700 max-w-lg break-words">
           description : {data.text}
         </p>
 
-        <Answer id={data.id} correct={correct} status={data.status} />
-        {data.status == "open" ? (
+        <Answer
+          id={data.id}
+          correct={correct}
+          status={status}
+          setStatus={setStatus}
+        />
+        {status == "open" ? (
           <form onSubmit={handleAnswerSubmit}>
             <div className="mt-4">
               <label
@@ -734,13 +671,10 @@ function App() {
         return;
       }
       try {
-        // const userId = jwt_decode(userToken).id;
         const response = await axios.post("/questions", {
           title,
           text,
-          // userId,
         });
-        // if (response.status >= 200 && response.status <= 299) {
         toast.success("Question added");
         setCurrentComp("home");
         window.location.reload();
@@ -849,7 +783,7 @@ function App() {
           toast.success(res.data.data.message);
           setUsers((usrs) => {
             console.log(usrs);
-            let filteredU = usrs.filter((u) => !(u.id == id));
+            let filteredU = usrs.filter((u) => u.id != id);
             console.log(filteredU);
             return filteredU;
           });

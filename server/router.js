@@ -32,11 +32,8 @@ const admin = function (req, res, next) {
   }
   next();
 };
-
 const checkPercentage = async (req, res, next) => {
   const percentage = await LanguageSetting.findOne();
-  //{ where: { id: 1 } }
-  // assuming the percentage is stored in the Settings table with id 1
 
   const englishLettersRegex = /[A-Za-z\s\.,;:'"?!()-]/;
   let { text } = req.body;
@@ -53,9 +50,6 @@ const checkPercentage = async (req, res, next) => {
   }
   let currentPercentage = englishLettersCount / totalLettersCount;
   let setPercentage = percentage.minimumPercentage / 100;
-  // console.log("====================================");
-  // console.log(currentPercentage, " and ", setPercentage);
-  // console.log("====================================");
   if (currentPercentage <= setPercentage) {
     next();
   } else {
@@ -69,14 +63,6 @@ const checkPercentage = async (req, res, next) => {
   }
 };
 
-function createResponse(type, response, token, role) {
-  if (role !== "" || role !== null) {
-    return JSON.stringify({ code: type, msg: response, role: role, token });
-  } else {
-    return JSON.stringify({ code: type, msg: response, token: token });
-  }
-}
-
 // GET all questions
 router.get("/questions", async (req, res) => {
   try {
@@ -87,6 +73,7 @@ router.get("/questions", async (req, res) => {
     res.sendResponse(404, { message: "couldn't find questions" }, "error");
   }
 });
+
 // search questions
 router.get("/questions/search/:searchText", async (req, res) => {
   const searchText = req.params.searchText;
@@ -106,6 +93,7 @@ router.get("/questions/search/:searchText", async (req, res) => {
     res.sendResponse(404, { message: "couldn't find questions" }, "error");
   }
 });
+
 // GET a specific question and its answers
 router.get("/questions/:id", async (req, res) => {
   const { id } = req.params;
@@ -348,59 +336,7 @@ router.get("/answers/:questionId/:answerId/correct", auth, async (req, res) => {
   }
 });
 
-// router.post("/login", async function (req, res) {
-//   const { email, password } = req.body;
-
-//   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-//     try {
-//       const user = await User.findOne({
-//         where: {
-//           email: email,
-//         },
-//       });
-
-//       try {
-//         const validPassword = await bcrypt.compare(password, user.password);
-//         if (validPassword) {
-//           const token = jwt.sign(
-//             {
-//               name: user.name,
-//               email: user.email,
-//               role: user.role,
-//               id: user.id,
-//             },
-//             jwt_private
-//           );
-
-//           // res.send(
-//           //   createResponse("success", "User Logged In", token, user.role)
-//           // );
-//           res.sendResponse(200, token, "success");
-//         } else {
-//           // res.send(createResponse("error", "Invalid Username/Password"));
-//           res.sendResponse(
-//             401,
-//             { message: "Invalid Username/Password" },
-//             "error"
-//           );
-//         }
-//       } catch (error) {
-//         res.sendResponse(
-//           401,
-//           { message: "Invalid Username/Password" },
-//           "error"
-//         );
-//         // res.send(createResponse("error", "Invalid Username/Password"));
-//       }
-//     } catch (err) {
-//       res.sendResponse(401, { message: "Invalid Username/Password" }, "error");
-//       // res.send(createResponse("error", "Invalid Username/Password"));
-//     }
-//   } else {
-//     res.sendResponse(401, { message: "Invalid Username/Password" }, "error");
-//     // res.send(createResponse("error", "Enter a valid email"));
-//   }
-// });
+// Login user
 router.post(
   "/login",
   body("email").isEmail().normalizeEmail().notEmpty(),
@@ -449,34 +385,7 @@ router.post(
   }
 );
 
-// router.post("/register", async function (req, res) {
-//   const salt = await bcrypt.genSalt(10);
-//   let { name, email, password } = req.body;
-//   password = await bcrypt.hash(password, salt);
-
-//   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-//     try {
-//       const user = await User.create({ name, email, password });
-//       const token = jwt.sign(
-//         {
-//           name: user.name,
-//           email: user.email,
-//           role: user.role,
-//           id: user.id,
-//         },
-//         jwt_private
-//       );
-//       res.send(
-//         createResponse("success", "User Registered Succesfully!", token)
-//       );
-//     } catch (error) {
-//       res.send(createResponse("error", "user already exists"));
-//     }
-//   } else {
-//     res.send(createResponse("error", "Enter a valid email"));
-//   }
-// });
-// GET a single user by ID
+// Resgister user
 router.post(
   "/register",
   body("name").notEmpty().trim().escape().isLength({ min: 3 }),
@@ -520,6 +429,7 @@ router.post(
   }
 );
 
+// GET all users
 router.get("/users", auth, admin, async (req, res) => {
   try {
     const users = await User.findAll();
@@ -529,6 +439,7 @@ router.get("/users", auth, admin, async (req, res) => {
   }
 });
 
+// GET a single user by ID
 router.get("/users/:id", async (req, res) => {
   const { id } = req.params;
   try {
@@ -543,6 +454,7 @@ router.get("/users/:id", async (req, res) => {
   }
 });
 
+// DELETE a single user by ID
 router.delete("/users/:id", auth, admin, async (req, res) => {
   const { id } = req.params;
   try {
@@ -562,6 +474,7 @@ router.delete("/users/:id", auth, admin, async (req, res) => {
   }
 });
 
+// SET English percentage
 router.get("/language-setting", async (req, res) => {
   try {
     let languageSetting = await LanguageSetting.findOne();
@@ -578,6 +491,7 @@ router.get("/language-setting", async (req, res) => {
     );
   }
 });
+
 // Update minimum percentage for English words
 router.put(
   "/language-setting",
