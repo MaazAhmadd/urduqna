@@ -15,8 +15,8 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use((req, res, next) => {
   res.sendResponse = (status, data, code) => {
+    // status, // 200, 201, 400, 404, 500
     const response = {
-      status, // 200, 201, 400, 404, 500
       code, // success, error
       data,
     };
@@ -26,6 +26,17 @@ app.use((req, res, next) => {
 });
 
 app.use("/api", questionsRouter);
+
+app.use(express.static("build"));
+
+app.all("*", (req, res) => {
+  res.status(404).json({
+    code: "error",
+    data: {
+      message: "Invalid route",
+    },
+  });
+});
 
 (async () => {
   try {

@@ -42,7 +42,7 @@ const checkPercentage = async (req, res, next) => {
   let totalLettersCount = 0;
   text = text.replaceAll(" ", "");
   for (let i = 0; i < text.length; i++) {
-    console.log(text[i]);
+    // console.log(text[i]);
     if (englishLettersRegex.test(text[i])) {
       englishLettersCount++;
     }
@@ -407,24 +407,20 @@ router.post(
     let { name, email, password } = req.body;
     password = await bcrypt.hash(password, salt);
 
-    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      try {
-        const user = await User.create({ name, email, password });
-        const token = jwt.sign(
-          {
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            id: user.id,
-          },
-          jwt_private
-        );
-        res.sendResponse(201, { token }, "success");
-      } catch (error) {
-        res.sendResponse(409, { message: "user already exists" }, "error");
-      }
-    } else {
-      res.sendResponse(400, { message: "Enter a valid email" }, "error");
+    try {
+      const user = await User.create({ name, email, password });
+      const token = jwt.sign(
+        {
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          id: user.id,
+        },
+        jwt_private
+      );
+      res.sendResponse(201, { token }, "success");
+    } catch (error) {
+      res.sendResponse(409, { message: "user already exists" }, "error");
     }
   }
 );
