@@ -778,6 +778,7 @@ function App() {
       axios("/users")
         .then((response) => {
           setUsers(response.data.data.users);
+          console.log(response.data.data.users);
         })
         .catch((error) => {
           showError(error);
@@ -804,6 +805,7 @@ function App() {
         <h1 className="text-lg font-bold text-white">All Users</h1>
         <br />
         {users.map((user) => {
+          if(user.role == "admin") return
           return (
             <div key={user.id}>
               <div className="flex rounded-lg justify-between text-lg p-4 text-gray-600 bg-white ">
