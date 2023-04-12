@@ -17,7 +17,7 @@ function App() {
       error?.response?.data?.errors?.forEach((error) => {
         toast.error(`${error?.msg} (${error?.param})`);
       });
-    } else if (error?.response?.data?.code == "error") {
+    } else if (error?.response?.data?.code === "error") {
       toast.error(error?.response?.data?.data?.message);
     }
   };
@@ -66,9 +66,9 @@ function App() {
         >
           <span className="font-semibold text-xl tracking-tight">
             Urdu Q/A Portal <br />(
-            {decToken.role == "admin"
+            {decToken.role === "admin"
               ? "admin"
-              : decToken.role == "participator"
+              : decToken.role === "participator"
               ? "participator"
               : "public"}
             )
@@ -77,7 +77,7 @@ function App() {
         {userToken && (
           <div
             className={`flex items-center flex-shrink-0 text-white mr-6 cursor-pointer ${
-              currentComp == "myQ" ? "border-2 p-2" : ""
+              currentComp === "myQ" ? "border-2 p-2" : ""
             }`}
             onClick={() => {
               setCurrentComp("myQ");
@@ -88,7 +88,7 @@ function App() {
         )}
         <div
           className={`flex items-center flex-shrink-0 text-white mr-6 cursor-pointer ${
-            currentComp == "home" ? "border-2 p-2" : ""
+            currentComp === "home" ? "border-2 p-2" : ""
           }`}
           onClick={() => {
             setCurrentComp("home");
@@ -98,7 +98,7 @@ function App() {
         </div>
         <div
           className={`flex items-center flex-shrink-0 text-white mr-6 cursor-pointer ${
-            currentComp == "ask" ? "border-2 p-2" : ""
+            currentComp === "ask" ? "border-2 p-2" : ""
           }`}
           onClick={() => {
             setCurrentComp("ask");
@@ -108,7 +108,7 @@ function App() {
         </div>
         <div
           className={`flex items-center flex-shrink-0 text-white mr-6 cursor-pointer ${
-            currentComp == "search" ? "border-2 p-2" : ""
+            currentComp === "search" ? "border-2 p-2" : ""
           }`}
           onClick={() => {
             setCurrentComp("search");
@@ -116,10 +116,10 @@ function App() {
         >
           <span className="font-semibold text-xl tracking-tight">Search</span>
         </div>
-        {decToken.role == "admin" && (
+        {decToken.role === "admin" && (
           <div
             className={`flex items-center flex-shrink-0 text-white mr-6 cursor-pointer ${
-              currentComp == "engPerc" ? "border-2 p-2" : ""
+              currentComp === "engPerc" ? "border-2 p-2" : ""
             }`}
             onClick={() => {
               setCurrentComp("engPerc");
@@ -357,7 +357,7 @@ function App() {
           toast.success("Answer marked as correct");
           setAnswers((ans) => {
             return ans.map((a) => {
-              if (a.id == aID) {
+              if (a.id === aID) {
                 return { ...a, isCorrect: true };
               } else {
                 return { ...a, isCorrect: false };
@@ -376,7 +376,7 @@ function App() {
         .then((res) => {
           toast.success("Answer deleted");
           setAnswers((ans) => {
-            return ans.filter((a) => a.id != aID);
+            return ans.filter((a) => a.id !== aID);
           });
         })
         .catch((error) => {
@@ -409,9 +409,9 @@ function App() {
               </div>
 
               <div className="text-right">
-                {status == "open" &&
-                  (decToken.role == "admin" ||
-                    decToken.id == answer.userId) && (
+                {status === "open" &&
+                  (decToken.role === "admin" ||
+                    decToken.id === answer.userId) && (
                     <button
                       className="w-40 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mr-4"
                       onClick={() => handleDeleteAnswer(answer.id)}
@@ -419,7 +419,7 @@ function App() {
                       delete answer
                     </button>
                   )}
-                {decToken.role == "admin" && status == "open" ? (
+                {decToken.role === "admin" && status === "open" ? (
                   <button
                     className="w-40 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-4"
                     onClick={() => handleMarkCorrect(id, answer.id)}
@@ -427,7 +427,7 @@ function App() {
                     mark as correct
                   </button>
                 ) : (
-                  status == "open" &&
+                  status === "open" &&
                   correct && (
                     <button
                       className="w-40 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-4"
@@ -460,7 +460,7 @@ function App() {
     }, []);
     const handleAnswerSubmit = async (e) => {
       e.preventDefault();
-      if (data.userId == decToken.id) {
+      if (data.userId === decToken.id) {
         toast.error("You can't answer your own question");
         setAnswerText("");
         return;
@@ -492,14 +492,14 @@ function App() {
       <div
         key={data.id}
         className={`${
-          status == "open" ? "bg-white" : "bg-gray-400"
+          status === "open" ? "bg-white" : "bg-gray-400"
         } shadow p-4 mb-4`}
       >
         <div className="text-gray-600 flex justify-between">
           <p>
             Question by : <strong>{user.name}</strong>
           </p>
-          {decToken.role == "admin" ? (
+          {decToken.role === "admin" ? (
             <button
               onClick={handleQuestionDelete}
               className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
@@ -527,7 +527,7 @@ function App() {
           status={status}
           setStatus={setStatus}
         />
-        {status == "open" ? (
+        {status === "open" ? (
           <form onSubmit={handleAnswerSubmit}>
             <div className="mt-4">
               <label
@@ -563,7 +563,7 @@ function App() {
 
     useEffect(() => {
       axios("/questions").then((res) => {
-        if (res.data.code == "error") {
+        if (res.data.code === "error") {
           toast.error(res.data.data.message);
         } else {
           setQuestions(res.data.data.questions);
@@ -585,13 +585,13 @@ function App() {
 
     useEffect(() => {
       axios("/questions").then((res) => {
-        if (res.data.code == "error") {
+        if (res.data.code === "error") {
           toast.error(res.data.data.message);
           return;
         } else {
           const userId = jwt_decode(userToken).id;
           const myQuestions = res.data.data.questions.filter((question) => {
-            return question.userId == userId;
+            return question.userId === userId;
           });
           setQuestions(myQuestions);
         }
@@ -805,7 +805,7 @@ function App() {
         <h1 className="text-lg font-bold text-white">All Users</h1>
         <br />
         {users.map((user) => {
-          if(user.role == "admin") return
+          if(user.role === "admin") return
           return (
             <div key={user.id}>
               <div className="flex rounded-lg justify-between text-lg p-4 text-gray-600 bg-white ">
@@ -830,7 +830,7 @@ function App() {
     );
   };
 
-  if (currentComp == "home") {
+  if (currentComp === "home") {
     return (
       <>
         <Toaster position="bottom-right" reverseOrder={false} />
@@ -839,7 +839,7 @@ function App() {
       </>
     );
   }
-  if (currentComp == "login") {
+  if (currentComp === "login") {
     return (
       <>
         <Toaster position="bottom-right" reverseOrder={false} />
@@ -848,7 +848,7 @@ function App() {
       </>
     );
   }
-  if (currentComp == "register") {
+  if (currentComp === "register") {
     return (
       <>
         <Toaster position="bottom-right" reverseOrder={false} />
@@ -857,7 +857,7 @@ function App() {
       </>
     );
   }
-  if (currentComp == "search") {
+  if (currentComp === "search") {
     return (
       <>
         <Toaster position="bottom-right" reverseOrder={false} />
@@ -866,7 +866,7 @@ function App() {
       </>
     );
   }
-  if (currentComp == "ask") {
+  if (currentComp === "ask") {
     return (
       <>
         <Toaster position="bottom-right" reverseOrder={false} />
@@ -875,7 +875,7 @@ function App() {
       </>
     );
   }
-  if (currentComp == "myQ") {
+  if (currentComp === "myQ") {
     return (
       <>
         <Toaster position="bottom-right" reverseOrder={false} />
@@ -884,7 +884,7 @@ function App() {
       </>
     );
   }
-  if (currentComp == "engPerc") {
+  if (currentComp === "engPerc") {
     return (
       <>
         <Toaster position="bottom-right" reverseOrder={false} />
